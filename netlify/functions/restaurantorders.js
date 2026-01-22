@@ -1,5 +1,58 @@
 import mongoose from "mongoose";
-import Order from "../../models/Order.js";
+
+// Define Order schema and model directly to avoid import issues
+const orderSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    order_items: {
+      type: Array,
+      required: true,
+      default: [],
+    },
+    address: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phone_no: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    collectionMethod: {
+      type: String,
+      required: true,
+      enum: ["delivery", "pickup"],
+      trim: true,
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["pending", "processing", "ready", "completed", "cancelled"],
+      default: "pending",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Get or create the Order model
+function getOrderModel() {
+  if (mongoose.models.Order) {
+    return mongoose.models.Order;
+  }
+  return mongoose.model("Order", orderSchema);
+}
 
 // MongoDB connection caching for serverless (reuse connections across invocations)
 let cached = global.mongoose;
@@ -103,6 +156,7 @@ export const handler = async (event) => {
     // Route: GET /api/restaurant-orders (get all orders)
     if (httpMethod === "GET" && !id) {
       try {
+        const Order = getOrderModel();
         const orders = await Order.find()
           .sort({ createdAt: -1 })
           .select("-__v");
@@ -142,6 +196,7 @@ export const handler = async (event) => {
           };
         }
 
+        const Order = getOrderModel();
         const order = await Order.findById(id).select("-__v");
 
         if (!order) {
@@ -249,6 +304,7 @@ export const handler = async (event) => {
         }
 
         // Create new order
+        const Order = getOrderModel();
         const order = new Order({
           name,
           order_items,
@@ -323,6 +379,7 @@ export const handler = async (event) => {
           };
         }
 
+        const Order = getOrderModel();
         const order = await Order.findByIdAndUpdate(
           id,
           { status },
@@ -440,6 +497,7 @@ export const handler = async (event) => {
           };
         }
 
+        const Order = getOrderModel();
         const order = await Order.findByIdAndUpdate(
           id,
           updateData,
@@ -494,6 +552,7 @@ export const handler = async (event) => {
           };
         }
 
+        const Order = getOrderModel();
         const order = await Order.findByIdAndDelete(id);
 
         if (!order) {
