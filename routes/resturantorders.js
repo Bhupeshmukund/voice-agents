@@ -248,3 +248,4 @@ router.delete("/restaurant-orders/:id", async (req, res) => {
 });
 
 export default router;
+export { router };

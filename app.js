@@ -1,6 +1,14 @@
 import express from "express";
 import connectDB from "./config/db.js";
-import restaurantOrdersRoutes from "./routes/resturantorders.js";
+import restaurantOrdersRoutesModule from "./routes/resturantorders.js";
+
+// Handle default export for Netlify serverless environment
+const restaurantOrdersRoutes = restaurantOrdersRoutesModule?.default || restaurantOrdersRoutesModule;
+
+// Validate that router is actually a router function
+if (!restaurantOrdersRoutes || typeof restaurantOrdersRoutes !== 'function') {
+  throw new Error(`Invalid router import. Expected function, got: ${typeof restaurantOrdersRoutes}`);
+}
 
 const app = express();
 
