@@ -399,51 +399,58 @@
             }
 
             const ordersHTML = orders.map(order => {
-                const statusClass = `status-${order.status}`;
-                const formattedDate = new Date(order.createdAt).toLocaleString();
-                const formattedAmount = `$${order.amount.toFixed(2)}`;
+                const statusClass = `status-${order.status || 'pending'}`;
+                const formattedDate = order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A';
+                const amount = order.amount != null ? Number(order.amount) : 0;
+                const formattedAmount = `$${amount.toFixed(2)}`;
 
-                const itemsHTML = order.order_items.map(item => `
-                    <div class="item">
-                        <div>
-                            <div class="item-name">${item.item}</div>
-                            <div class="item-details">
-                                Qty: ${item.quantity} × $${item.price.toFixed(2)}
-                                ${item.notes ? ` • ${item.notes}` : ''}
+                const itemsHTML = (order.order_items || []).map(item => {
+                    const itemPrice = item.price != null ? Number(item.price) : 0;
+                    const itemQuantity = item.quantity != null ? Number(item.quantity) : 0;
+                    const itemTotal = itemPrice * itemQuantity;
+                    
+                    return `
+                        <div class="item">
+                            <div>
+                                <div class="item-name">${item.item || 'Unknown Item'}</div>
+                                <div class="item-details">
+                                    Qty: ${itemQuantity} × $${itemPrice.toFixed(2)}
+                                    ${item.notes ? ` • ${item.notes}` : ''}
+                                </div>
                             </div>
+                            <div class="item-details">$${itemTotal.toFixed(2)}</div>
                         </div>
-                        <div class="item-details">$${(item.quantity * item.price).toFixed(2)}</div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
 
                 return `
                     <div class="order-card">
                         <div class="order-header">
                             <div>
                                 <div style="font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 5px;">
-                                    ${order.name}
+                                    ${order.name || 'Unknown Customer'}
                                 </div>
-                                <div class="order-id">ID: ${order._id}</div>
+                                <div class="order-id">ID: ${order._id || 'N/A'}</div>
                             </div>
-                            <span class="status-badge ${statusClass}">${order.status}</span>
+                            <span class="status-badge ${statusClass}">${order.status || 'pending'}</span>
                         </div>
                         <div class="order-info">
                             <div class="order-info-item">
                                 <strong>📞 Phone:</strong>
-                                <span>${order.phone_no}</span>
+                                <span>${order.phone_no || 'N/A'}</span>
                             </div>
                             <div class="order-info-item">
                                 <strong>📍 Address:</strong>
-                                <span>${order.address}</span>
+                                <span>${order.address || 'N/A'}</span>
                             </div>
                             <div class="order-info-item">
                                 <strong>🚚 Type:</strong>
-                                <span style="text-transform: capitalize;">${order.collectionMethod}</span>
+                                <span style="text-transform: capitalize;">${order.collectionMethod || 'N/A'}</span>
                             </div>
                         </div>
                         <div class="order-items">
-                            <h3>Order Items (${order.order_items.length})</h3>
-                            ${itemsHTML}
+                            <h3>Order Items (${(order.order_items || []).length})</h3>
+                            ${itemsHTML || '<div class="item-details">No items</div>'}
                         </div>
                         <div class="order-footer">
                             <div>
@@ -461,7 +468,10 @@
         function updateStats(orders) {
             const totalOrders = orders.length;
             const pendingOrders = orders.filter(o => o.status === 'pending').length;
-            const totalAmount = orders.reduce((sum, order) => sum + order.amount, 0);
+            const totalAmount = orders.reduce((sum, order) => {
+                const amount = order.amount != null ? Number(order.amount) : 0;
+                return sum + amount;
+            }, 0);
 
             document.getElementById('totalOrders').textContent = totalOrders;
             document.getElementById('pendingOrders').textContent = pendingOrders;
@@ -474,13 +484,17 @@
             const collectionFilter = document.getElementById('collectionFilter').value;
 
             let filtered = allOrders.filter(order => {
+                const name = (order.name || '').toLowerCase();
+                const phone = (order.phone_no || '').toLowerCase();
+                const address = (order.address || '').toLowerCase();
+                
                 const matchesSearch = !searchTerm || 
-                    order.name.toLowerCase().includes(searchTerm) ||
-                    order.phone_no.toLowerCase().includes(searchTerm) ||
-                    order.address.toLowerCase().includes(searchTerm);
+                    name.includes(searchTerm) ||
+                    phone.includes(searchTerm) ||
+                    address.includes(searchTerm);
 
-                const matchesStatus = !statusFilter || order.status === statusFilter;
-                const matchesCollection = !collectionFilter || order.collectionMethod === collectionFilter;
+                const matchesStatus = !statusFilter || (order.status || '') === statusFilter;
+                const matchesCollection = !collectionFilter || (order.collectionMethod || '') === collectionFilter;
 
                 return matchesSearch && matchesStatus && matchesCollection;
             });
