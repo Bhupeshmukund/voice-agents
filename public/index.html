@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Orders Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-card .label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input,
+        .controls select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .controls input:focus,
+        .controls select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover {
+            background: #5568d3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .order-id {
+            font-size: 0.85rem;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-processing {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .status-ready {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .order-info {
+            margin-bottom: 15px;
+        }
+
+        .order-info-item {
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .order-info-item strong {
+            min-width: 100px;
+            color: #555;
+        }
+
+        .order-info-item span {
+            color: #333;
+        }
+
+        .order-items {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .order-items h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .item-details {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .order-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .order-date {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg) scale(1.1);
+            background: #5568d3;
+        }
+
+        @media (max-width: 768px) {
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats {
+                width: 100%;
+                justify-content: space-around;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            color: #666;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Restaurant Orders Dashboard</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="value" id="totalOrders">0</div>
+                    <div class="label">Total Orders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="pendingOrders">0</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="totalAmount">$0</div>
+                    <div class="label">Total Amount</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search by name, phone, or address..." style="flex: 1; min-width: 200px;">
+            <select id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="ready">Ready</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+            <select id="collectionFilter">
+                <option value="">All Types</option>
+                <option value="delivery">Delivery</option>
+                <option value="pickup">Pickup</option>
+            </select>
+            <button onclick="loadOrders()">Refresh</button>
+        </div>
+
+        <div id="content">
+            <div class="loading">Loading orders...</div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="loadOrders()" title="Refresh">↻</button>
+
+    <script>
+        const API_URL = '/api/restaurant-orders';
+        let allOrders = [];
+
+        async function loadOrders() {
+            const contentDiv = document.getElementById('content');
+            contentDiv.innerHTML = '<div class="loading">Loading orders...</div>';
+
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                if (data.success && data.orders) {
+                    allOrders = data.orders;
+                    displayOrders(allOrders);
+                    updateStats(allOrders);
+                } else {
+                    contentDiv.innerHTML = `<div class="error">Error: ${data.error || 'Failed to load orders'}</div>`;
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="error">Error loading orders: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
+        }
+
+        function displayOrders(orders) {
+            const contentDiv = document.getElementById('content');
+
+            if (orders.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No orders found</h2>
+                        <p>Try adjusting your filters or check back later.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const ordersHTML = orders.map(order => {
+                const statusClass = `status-${order.status}`;
+                const formattedDate = new Date(order.createdAt).toLocaleString();
+                const formattedAmount = `$${order.amount.toFixed(2)}`;
+
+                const itemsHTML = order.order_items.map(item => `
+                    <div class="item">
+                        <div>
+                            <div class="item-name">${item.item}</div>
+                            <div class="item-details">
+                                Qty: ${item.quantity} × $${item.price.toFixed(2)}
+                                ${item.notes ? ` • ${item.notes}` : ''}
+                            </div>
+                        </div>
+                        <div class="item-details">$${(item.quantity * item.price).toFixed(2)}</div>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div>
+                                <div style="font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 5px;">
+                                    ${order.name}
+                                </div>
+                                <div class="order-id">ID: ${order._id}</div>
+                            </div>
+                            <span class="status-badge ${statusClass}">${order.status}</span>
+                        </div>
+                        <div class="order-info">
+                            <div class="order-info-item">
+                                <strong>📞 Phone:</strong>
+                                <span>${order.phone_no}</span>
+                            </div>
+                            <div class="order-info-item">
+                                <strong>📍 Address:</strong>
+                                <span>${order.address}</span>
+                            </div>
+                            <div class="order-info-item">
+                                <strong>🚚 Type:</strong>
+                                <span style="text-transform: capitalize;">${order.collectionMethod}</span>
+                            </div>
+                        </div>
+                        <div class="order-items">
+                            <h3>Order Items (${order.order_items.length})</h3>
+                            ${itemsHTML}
+                        </div>
+                        <div class="order-footer">
+                            <div>
+                                <div class="order-amount">${formattedAmount}</div>
+                                <div class="order-date">${formattedDate}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentDiv.innerHTML = `<div class="orders-grid">${ordersHTML}</div>`;
+        }
+
+        function updateStats(orders) {
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter(o => o.status === 'pending').length;
+            const totalAmount = orders.reduce((sum, order) => sum + order.amount, 0);
+
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+            document.getElementById('totalAmount').textContent = `$${totalAmount.toFixed(2)}`;
+        }
+
+        function filterOrders() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const collectionFilter = document.getElementById('collectionFilter').value;
+
+            let filtered = allOrders.filter(order => {
+                const matchesSearch = !searchTerm || 
+                    order.name.toLowerCase().includes(searchTerm) ||
+                    order.phone_no.toLowerCase().includes(searchTerm) ||
+                    order.address.toLowerCase().includes(searchTerm);
+
+                const matchesStatus = !statusFilter || order.status === statusFilter;
+                const matchesCollection = !collectionFilter || order.collectionMethod === collectionFilter;
+
+                return matchesSearch && matchesStatus && matchesCollection;
+            });
+
+            displayOrders(filtered);
+            updateStats(filtered);
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterOrders);
+        document.getElementById('statusFilter').addEventListener('change', filterOrders);
+        document.getElementById('collectionFilter').addEventListener('change', filterOrders);
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadOrders, 30000);
+
+        // Load orders on page load
+        loadOrders();
+    </script>
+</body>
+</html>

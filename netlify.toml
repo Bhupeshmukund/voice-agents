@@ -1,14 +1,14 @@
 [build]
   command = "npm install"
   functions = "netlify/functions"
-  publish = "."
+  publish = "public"
 
 [build.environment]
   NODE_VERSION = "18"
 
 # Health check route
 [[redirects]]
-  from = "/"
+  from = "/health"
   to = "/.netlify/functions/health"
   status = 200
 
