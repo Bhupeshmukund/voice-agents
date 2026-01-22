@@ -1,9 +1,19 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-dotenv.config();
+// Only load dotenv in local development (not in Netlify)
+if (process.env.NODE_ENV !== 'production' || !process.env.NETLIFY) {
+  dotenv.config();
+}
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://your-cluster-link-here";
+const MONGODB_URI = process.env.MONGODB_URI;
+
+// Validate that MONGODB_URI is set and not a placeholder
+if (!MONGODB_URI || MONGODB_URI.includes('your-cluster-link-here')) {
+  const errorMsg = "MONGODB_URI environment variable is not set or is using placeholder value. Please set it in Netlify environment variables.";
+  console.error("❌", errorMsg);
+  throw new Error(errorMsg);
+}
 
 // Set up connection event listeners
 mongoose.connection.on("connected", () => {
@@ -27,7 +37,9 @@ const connectDB = async () => {
     }
 
     console.log("Attempting to connect to MongoDB...");
-    console.log(`Connection URI: ${MONGODB_URI.replace(/:[^:@]+@/, ':****@')}`); // Hide password in logs
+    if (MONGODB_URI) {
+      console.log(`Connection URI: ${MONGODB_URI.replace(/:[^:@]+@/, ':****@')}`); // Hide password in logs
+    }
     
     const conn = await mongoose.connect(MONGODB_URI, {
       // These options are recommended for MongoDB Atlas
@@ -46,12 +58,19 @@ const connectDB = async () => {
   } catch (error) {
     console.error("❌ MongoDB Connection Failed!");
     console.error(`   Error: ${error.message}`);
-    console.error("   Please check your connection string and network access settings.");
+    console.error(`   Error Code: ${error.code || 'N/A'}`);
+    console.error(`   MONGODB_URI is set: ${!!MONGODB_URI}`);
+    console.error(`   MONGODB_URI starts with mongodb: ${MONGODB_URI?.startsWith('mongodb') || false}`);
+    console.error("   Please check:");
+    console.error("   1. MONGODB_URI is set in Netlify environment variables");
+    console.error("   2. MongoDB Atlas network access allows connections from anywhere (0.0.0.0/0)");
+    console.error("   3. Connection string is correct and includes database name");
     // Don't exit process in serverless environment
-    if (process.env.NETLIFY !== 'true') {
-      process.exit(1);
+    if (process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      // Serverless environment - just throw, don't exit
+      throw error;
     }
-    throw error;
+    process.exit(1);
   }
 };
 
