@@ -1,64 +1,66 @@
 import mongoose from "mongoose";
 
-// Define Order schema and model directly to avoid import issues
-const orderSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    order_items: {
-      type: Array,
-      required: true,
-      default: [],
-    },
-    address: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    phone_no: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    collectionMethod: {
-      type: String,
-      required: true,
-      enum: ["delivery", "pickup"],
-      trim: true,
-    },
-    status: {
-      type: String,
-      required: true,
-      enum: ["pending", "processing", "ready", "completed", "cancelled"],
-      default: "pending",
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-// Get or create the Order model
-function getOrderModel() {
-  if (mongoose.models.Order) {
-    return mongoose.models.Order;
-  }
-  return mongoose.model("Order", orderSchema);
-}
-
 // MongoDB connection caching for serverless (reuse connections across invocations)
 let cached = global.mongoose;
 
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
+}
+
+// Get or create Order model (serverless-safe)
+function getOrderModel() {
+  // If model already exists, return it
+  if (mongoose.models.Order) {
+    return mongoose.models.Order;
+  }
+
+  // Otherwise, define and return the model
+  const orderSchema = new mongoose.Schema(
+    {
+      name: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      order_items: {
+        type: Array,
+        required: true,
+        default: [],
+      },
+      address: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      phone_no: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      amount: {
+        type: Number,
+        required: true,
+        min: 0,
+      },
+      collectionMethod: {
+        type: String,
+        required: true,
+        enum: ["delivery", "pickup"],
+        trim: true,
+      },
+      status: {
+        type: String,
+        required: true,
+        enum: ["pending", "processing", "ready", "completed", "cancelled"],
+        default: "pending",
+      },
+    },
+    {
+      timestamps: true,
+    }
+  );
+
+  return mongoose.model("Order", orderSchema);
 }
 
 async function connectDB() {
