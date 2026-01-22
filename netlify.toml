@@ -6,7 +6,19 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Health check route
 [[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/server"
+  from = "/"
+  to = "/.netlify/functions/health"
+  status = 200
+
+# API routes - redirect to restaurantorders function
+[[redirects]]
+  from = "/api/restaurant-orders/*"
+  to = "/.netlify/functions/restaurantorders"
+  status = 200
+
+[[redirects]]
+  from = "/api/restaurant-orders"
+  to = "/.netlify/functions/restaurantorders"
   status = 200
