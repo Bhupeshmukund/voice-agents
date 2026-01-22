@@ -1,0 +1,10 @@
+node_modules
+.env
+.env.local
+*.log
+.git
+.gitignore
+README.md
+POSTMAN_TEST_DATA.md
+postman-examples.json
+New folder

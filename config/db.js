@@ -20,6 +20,12 @@ mongoose.connection.on("disconnected", () => {
 
 const connectDB = async () => {
   try {
+    // Check if already connected (for serverless function reuse)
+    if (mongoose.connection.readyState === 1) {
+      console.log("✅ MongoDB Already Connected (Reusing connection)");
+      return mongoose.connection;
+    }
+
     console.log("Attempting to connect to MongoDB...");
     console.log(`Connection URI: ${MONGODB_URI.replace(/:[^:@]+@/, ':****@')}`); // Hide password in logs
     
@@ -41,7 +47,11 @@ const connectDB = async () => {
     console.error("❌ MongoDB Connection Failed!");
     console.error(`   Error: ${error.message}`);
     console.error("   Please check your connection string and network access settings.");
-    process.exit(1);
+    // Don't exit process in serverless environment
+    if (process.env.NETLIFY !== 'true') {
+      process.exit(1);
+    }
+    throw error;
   }
 };
 
